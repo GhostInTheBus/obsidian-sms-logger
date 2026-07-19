@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow plain HTTP to your server. Replace with your own LAN IP and/or
+         Tailscale tailnet domain before building. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.1.100</domain>
+        <domain includeSubdomains="true">example.ts.net</domain>
+    </domain-config>
+</network-security-config>

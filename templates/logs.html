@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Logs — Vi{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+  <h1>Logs</h1>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span id="live-badge" style="display:none;background:#22c55e;color:#000;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;animation:pulse 2s infinite">● LIVE</span>
+    <button id="live-btn" class="btn btn-ghost" onclick="toggleLive()" style="font-size:13px">▶ Go Live</button>
+    <button class="btn btn-ghost" onclick="location.reload()" style="font-size:13px">↻ Refresh</button>
+  </div>
+</div>
+<p class="subtitle" style="margin-bottom:20px">Last {{ n }} lines · <code style="background:var(--surface);padding:1px 6px;border-radius:4px;font-size:12px">{{ log_path }}</code></p>
+
+<!-- Controls -->
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center">
+  <div style="display:flex;gap:4px">
+    {% for lvl, label in [('all','All'),('info','Info'),('warning','Warnings'),('error','Errors')] %}
+    <a href="?level={{ lvl }}&n={{ n }}"
+       class="btn {% if level_filter == lvl %}btn-primary{% else %}btn-ghost{% endif %}"
+       style="font-size:13px;padding:6px 12px">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <div style="display:flex;gap:4px;margin-left:auto">
+    {% for count in [100, 200, 500] %}
+    <a href="?level={{ level_filter }}&n={{ count }}"
+       class="btn {% if n == count %}btn-primary{% else %}btn-ghost{% endif %}"
+       style="font-size:13px;padding:6px 12px">{{ count }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Log output -->
+<div id="log-container" style="background:#0d0d0d;border:1px solid var(--border);border-radius:12px;padding:16px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.7;overflow-x:auto;max-height:72vh;overflow-y:auto">
+  {% if log_lines %}
+    {% for line in log_lines %}
+    <div class="log-line log-{{ line.level }}">{{ line.text }}</div>
+    {% endfor %}
+  {% else %}
+  <div style="color:var(--muted)">No log lines match the current filter.</div>
+  {% endif %}
+</div>
+
+<style>
+.log-error   { color: #f87171; }
+.log-warning { color: #facc15; }
+.log-info    { color: #d1d5db; }
+.log-debug   { color: #6b7280; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+const c = document.getElementById('log-container');
+c.scrollTop = c.scrollHeight;
+
+let _es = null;
+let _autoScroll = true;
+
+c.addEventListener('scroll', () => {
+  _autoScroll = c.scrollTop + c.clientHeight >= c.scrollHeight - 40;
+});
+
+function _levelClass(text) {
+  if (text.includes(' ERROR ') || text.includes('ERROR:')) return 'log-error';
+  if (text.includes(' WARNING ') || text.includes('WARNING:')) return 'log-warning';
+  if (text.includes(' INFO ') || text.includes('INFO:')) return 'log-info';
+  return 'log-debug';
+}
+
+function _appendLine(text) {
+  const div = document.createElement('div');
+  div.className = 'log-line ' + _levelClass(text);
+  div.textContent = text;
+  c.appendChild(div);
+  if (_autoScroll) c.scrollTop = c.scrollHeight;
+}
+
+function toggleLive() {
+  if (_es) {
+    _es.close();
+    _es = null;
+    document.getElementById('live-badge').style.display = 'none';
+    document.getElementById('live-btn').textContent = '▶ Go Live';
+  } else {
+    _es = new EventSource('/dashboard/logs/stream');
+    _es.onmessage = e => _appendLine(e.data);
+    _es.onerror = () => {
+      document.getElementById('live-badge').style.display = 'none';
+      document.getElementById('live-btn').textContent = '▶ Go Live';
+      _es = null;
+    };
+    document.getElementById('live-badge').style.display = 'inline';
+    document.getElementById('live-btn').textContent = '■ Stop Live';
+    _autoScroll = true;
+    c.scrollTop = c.scrollHeight;
+  }
+}
+</script>
+{% endblock %}

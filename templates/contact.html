@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}{{ contact.name }} — Vi{% endblock %}
+{% block content %}
+
+<div class="flex items-center gap-3" style="margin-bottom:6px">
+  <a href="/dashboard" style="color:var(--text);text-decoration:none;font-size:14px">← Contacts</a>
+</div>
+
+<div class="flex items-center gap-3" style="margin-bottom:8px;margin-top:16px">
+  <div class="contact-avatar" style="width:52px;height:52px;font-size:20px">{{ contact.initials }}</div>
+  <div>
+    <h1>{{ contact.name }}</h1>
+    <div class="contact-meta">{{ contact.phone }}{% if contact.last_seen %} · last heard {{ contact.last_seen }}{% endif %}</div>
+  </div>
+</div>
+
+{% if contact.notes %}
+<div class="card" style="margin-top:20px">
+  <div style="font-size:13px;color:var(--text);margin-bottom:6px">Profile notes</div>
+  <div style="font-size:14px;white-space:pre-wrap;color:var(--text)">{{ contact.notes }}</div>
+</div>
+{% endif %}
+
+<!-- Tabs -->
+<div class="tabs" style="margin-top:24px">
+  <a class="tab active" href="#memories" onclick="showTab('memories',this);return false">Memories ({{ memories|length }})</a>
+  <a class="tab" href="#messages" onclick="showTab('messages',this);return false">Messages ({{ message_history|length }})</a>
+  <a class="tab" href="#add" onclick="showTab('add',this);return false">+ Add fact</a>
+</div>
+
+<!-- Memories tab -->
+<div id="tab-memories">
+  {% if memories %}
+    {% for category, facts in memories.items() %}
+    <div class="card">
+      <div class="card-header">
+        <span class="mem-category cat-{{ category }}">{{ category|replace('_',' ') }}</span>
+        <span style="color:var(--text);font-size:12px">{{ facts|length }}</span>
+      </div>
+      {% for m in facts %}
+      <div class="memory-row">
+        <div class="memory-fact">{{ m.fact }}</div>
+        <span class="conf-{{ m.confidence }}">{{ m.confidence }}</span>
+        <button class="nudge-dismiss" onclick="deleteFact({{ m.id }}, this)" title="Delete">✕</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <p class="empty">No extracted facts yet.</p>
+  {% endif %}
+</div>
+
+<!-- Messages tab -->
+<div id="tab-messages" class="hidden">
+  <div class="card">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="msg-search" placeholder="Search messages…" style="flex:1">
+      <button class="btn btn-primary" onclick="searchMessages()">Search</button>
+    </div>
+  </div>
+  {% if message_history %}
+  <div class="card" style="max-height:400px;overflow-y:auto">
+    {% for msg in message_history %}
+    <div class="memory-row" style="{% if msg.role == 'assistant' %}background:rgba(124,106,247,0.05){% endif %}">
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--text);margin-bottom:4px">
+          {% if msg.role == 'assistant' %}Vi{% elif msg.source == 'sms' %}You{% else %}Observed{% endif %}
+          {% if msg.timestamp %} · {{ msg.timestamp[:10] }}{% endif %}
+        </div>
+        <div style="font-size:16px;word-wrap:break-word;color:var(--text);white-space:pre-wrap;font-weight:600;line-height:1.8">{{ msg.content }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty">No messages yet.</p>
+  {% endif %}
+</div>
+
+<!-- Add fact tab -->
+<div id="tab-add" class="hidden">
+  <div class="card">
+    <h2>Add a fact manually</h2>
+    <form method="POST" action="/dashboard/contact/{{ contact.phone_enc }}/add">
+      <div class="form-group">
+        <label>Fact</label>
+        <input type="text" name="fact" placeholder="e.g. birthday is March 15" required>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select name="category">
+          <option value="date">date</option>
+          <option value="event">event</option>
+          <option value="preference" selected>preference</option>
+          <option value="commitment">commitment</option>
+          <option value="recommendation">recommendation</option>
+          <option value="relationship_fact">relationship fact</option>
+          <option value="emotional">emotional</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Confidence</label>
+        <select name="confidence">
+          <option value="high">high</option>
+          <option value="medium" selected>medium</option>
+          <option value="low">low</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Save fact</button>
+    </form>
+  </div>
+
+  {% if contact.notes is not none %}
+  <div class="card mt-4">
+    <h2>Edit profile notes</h2>
+    <form method="POST" action="/dashboard/contact/{{ contact.phone_enc }}/notes">
+      <div class="form-group">
+        <textarea name="notes" rows="6" placeholder="Free-text notes about this person…">{{ contact.notes or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Save notes</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if other_contacts %}
+  <div class="card mt-4">
+    <h2>Merge with another contact</h2>
+    <form method="POST" action="/dashboard/contact/{{ contact.phone_enc }}/merge">
+      <div class="form-group">
+        <label>Select contact to merge into this one</label>
+        <select name="target_phone" required>
+          <option value="">Choose a contact…</option>
+          {% for oc in other_contacts %}
+          <option value="{{ oc.phone_enc }}">{{ oc.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <p style="font-size:13px;color:var(--text);margin-bottom:12px">All memories and messages from the selected contact will be moved here, and the duplicate contact will be deleted.</p>
+      <button type="submit" class="btn btn-primary" onclick="return confirm('Merge these contacts? This cannot be undone.')">Merge contacts</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function showTab(name, el) {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  el.classList.add('active');
+}
+
+function deleteFact(id, btn) {
+  if (!confirm('Delete this fact?')) return;
+  fetch('/dashboard/memory/' + id + '/delete', {method: 'POST'})
+    .then(() => btn.closest('.memory-row').style.opacity = '0.3');
+}
+
+function searchMessages() {
+  const q = document.getElementById('msg-search').value.trim();
+  const url = new URL(window.location);
+  if (q) {
+    url.searchParams.set('msg_q', q);
+  } else {
+    url.searchParams.delete('msg_q');
+  }
+  window.location = url.toString();
+}
+</script>
+{% endblock %}

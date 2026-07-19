@@ -1,0 +1,32 @@
+# --- Vi-Assist Exclusions ---
+
+# Build Artifacts
+build/
+.gradle/
+captures/
+*.apk
+*.apks
+*.idsig
+
+# IDE & OS
+.idea/
+.kotlin/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local Configuration (IMPORTANT)
+local.properties
+.env
+secret.xml
+signing.properties
+
+# Signing Keys (NEVER COMMIT)
+*.jks
+*.keystore
+*.p12
+*.jks.base64
+
+# User Data & Logs
+*.log
+google-services.json

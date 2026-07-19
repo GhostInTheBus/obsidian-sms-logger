@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Search — Vi{% endblock %}
+{% block content %}
+<h1>Semantic Search</h1>
+<p class="subtitle">Search by meaning across everything Vi knows</p>
+
+<form method="GET" action="/dashboard/search">
+  <div class="search-wrap" style="margin-bottom:12px">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" name="q" value="{{ query or '' }}" placeholder="e.g. someone who loves hiking, stressed about work, promised me something…" autofocus>
+  </div>
+
+  <!-- Filters -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+    <div>
+      <label style="font-size:12px">Contact</label>
+      <select name="contact" style="width:100%">
+        <option value="">All contacts</option>
+        {% for c in all_contacts %}
+        <option value="{{ c.phone_enc }}" {% if contact_filter == c.phone_enc %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px">Category</label>
+      <select name="category" style="width:100%">
+        <option value="">All categories</option>
+        <option value="date" {% if category_filter == 'date' %}selected{% endif %}>date</option>
+        <option value="event" {% if category_filter == 'event' %}selected{% endif %}>event</option>
+        <option value="preference" {% if category_filter == 'preference' %}selected{% endif %}>preference</option>
+        <option value="commitment" {% if category_filter == 'commitment' %}selected{% endif %}>commitment</option>
+        <option value="recommendation" {% if category_filter == 'recommendation' %}selected{% endif %}>recommendation</option>
+        <option value="relationship_fact" {% if category_filter == 'relationship_fact' %}selected{% endif %}>relationship fact</option>
+        <option value="emotional" {% if category_filter == 'emotional' %}selected{% endif %}>emotional</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px">Scope</label>
+      <select name="scope" style="width:100%">
+        <option value="memories" {% if scope == 'memories' %}selected{% endif %}>Memories only</option>
+        <option value="messages" {% if scope == 'messages' %}selected{% endif %}>Messages only</option>
+        <option value="all" {% if scope == 'all' %}selected{% endif %}>Both</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:24px">
+    <button type="submit" class="btn btn-primary">Search</button>
+  </div>
+</form>
+
+{% if query %}
+  {% if results %}
+  <div style="color:var(--muted);font-size:13px;margin-bottom:16px">{{ results|length }} results for "{{ query }}"</div>
+
+  {% set mem_results = results|selectattr('result_type', 'equalto', 'memory')|list %}
+  {% set msg_results = results|selectattr('result_type', 'equalto', 'message')|list %}
+
+  {% if scope == 'all' %}
+    {% if mem_results %}
+    <div style="color:var(--muted);font-size:12px;margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.05em">Memories</div>
+    {% for r in mem_results %}
+    <div class="result-item">
+      <div class="result-contact">
+        <a href="/dashboard/contact/{{ r.phone_enc }}" style="color:var(--accent2);text-decoration:none">{{ r.contact_name }}</a>
+        &nbsp;·&nbsp;<span class="mem-category cat-{{ r.category }}">{{ r.category|replace('_',' ') }}</span>
+      </div>
+      <div class="result-fact">{{ r.fact }}</div>
+      <div class="result-score">similarity {{ "%.0f"|format(r.score * 100) }}%&nbsp;·&nbsp;<span class="conf-{{ r.confidence }}">{{ r.confidence }} confidence</span></div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if msg_results %}
+    <div style="color:var(--muted);font-size:12px;margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.05em">Messages</div>
+    {% for r in msg_results %}
+    <div class="result-item">
+      <div class="result-contact">
+        <a href="/dashboard/contact/{{ r.phone_enc }}" style="color:var(--accent2);text-decoration:none">{{ r.contact_name }}</a>
+        &nbsp;·&nbsp;<span class="mem-category" style="background:rgba(156,163,175,0.15);color:#9ca3af">{{ r.source }}</span>
+      </div>
+      <div class="result-fact">{{ r.content }}</div>
+      <div class="result-score">{% if r.timestamp %}{{ r.timestamp[:10] }}{% endif %}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+  {% else %}
+    {% for r in results %}
+    <div class="result-item">
+      {% if r.result_type == 'memory' %}
+      <div class="result-contact">
+        <a href="/dashboard/contact/{{ r.phone_enc }}" style="color:var(--accent2);text-decoration:none">{{ r.contact_name }}</a>
+        &nbsp;·&nbsp;<span class="mem-category cat-{{ r.category }}">{{ r.category|replace('_',' ') }}</span>
+      </div>
+      <div class="result-fact">{{ r.fact }}</div>
+      <div class="result-score">similarity {{ "%.0f"|format(r.score * 100) }}%&nbsp;·&nbsp;<span class="conf-{{ r.confidence }}">{{ r.confidence }} confidence</span></div>
+      {% else %}
+      <div class="result-contact">
+        <a href="/dashboard/contact/{{ r.phone_enc }}" style="color:var(--accent2);text-decoration:none">{{ r.contact_name }}</a>
+        &nbsp;·&nbsp;<span class="mem-category" style="background:rgba(156,163,175,0.15);color:#9ca3af">{{ r.source }}</span>
+      </div>
+      <div class="result-fact">{{ r.content }}</div>
+      <div class="result-score">{% if r.timestamp %}{{ r.timestamp[:10] }}{% endif %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% endif %}
+  {% else %}
+  <p class="empty">No results found for "{{ query }}".</p>
+  {% endif %}
+{% else %}
+<p class="empty">Type anything — a feeling, a topic, a situation. Vi will find related facts and messages.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+# Copy to docker-compose.yml and adjust volumes/ports for your setup.
+services:
+  sms-logger:
+    build: .
+    container_name: sms-logger
+    restart: unless-stopped
+    ports:
+      - "8097:5066"
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./attachments:/app/attachments
+      # Obsidian export target — point at the SMS folder inside your vault
+      # and keep OBSIDIAN_SMS_PATH=/vault/SMS in .env
+      - /path/to/your/obsidian-vault/SMS:/vault/SMS

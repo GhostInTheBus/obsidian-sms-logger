@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Play Store policy warnings — irrelevant for personal sideloaded app -->
+    <issue id="SmsUsage" severity="ignore" />
+    <!-- Foreground service type lint — already declared in manifest -->
+    <issue id="ForegroundServicePermission" severity="ignore" />
+</lint>

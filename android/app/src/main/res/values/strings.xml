@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Vi-Assist</string>
+    <string name="whitelist_title">SMS Whitelist</string>
+    <string name="whitelist_hint">Phone number (e.g. 5551234567)</string>
+    <string name="whitelist_empty">No numbers — all SMS will be forwarded</string>
+    <string name="add_number">Add Number</string>
+    <string name="delete">Delete</string>
+    <string-array name="mode_entries">
+        <item>Observer</item>
+        <item>Active</item>
+    </string-array>
+    <string-array name="mode_values">
+        <item>observe</item>
+        <item>active</item>
+    </string-array>
+</resources>

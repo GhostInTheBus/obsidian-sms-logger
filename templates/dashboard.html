@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Contacts — Vi{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h1 class="mb-0">Contacts</h1>
+  <button class="btn btn-sm btn-outline-secondary" onclick="exportToObsidian()">Export to Obsidian</button>
+</div>
+<p class="text-muted mb-4">{{ contacts|length }} people Vi knows about</p>
+
+<script>
+function exportToObsidian() {
+  if (confirm("Are you sure you want to export all contacts to Obsidian? This will overwrite existing files.")) {
+    fetch('/dashboard/export/obsidian', { method: 'POST' })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message);
+        console.log(data.files);
+      })
+      .catch(error => {
+        alert("Error exporting to Obsidian: " + error);
+        console.error('Error:', error);
+      });
+  }
+}
+</script>
+
+<div class="input-group mb-4">
+  <span class="input-group-text" id="basic-addon1">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  </span>
+  <input type="text" class="form-control" placeholder="Filter contacts…" oninput="filterContacts(this.value)" autofocus aria-label="Filter contacts" aria-describedby="basic-addon1">
+</div>
+
+{% if contacts %}
+<div class="contact-grid">
+  {% for c in contacts %}
+  <a class="contact-card" href="/dashboard/contact/{{ c.phone_enc }}" data-name="{{ c.name|lower }}">
+    <div class="contact-avatar">{{ c.initials }}</div>
+    <div class="contact-name">{{ c.name }}</div>
+    <div class="contact-meta">
+      {{ c.memory_count }} fact{% if c.memory_count != 1 %}s{% endif %}
+      {% if c.last_seen %} · {{ c.last_seen }}{% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No contacts yet. Vi will build profiles automatically as messages come in.</p>
+{% endif %}
+{% endblock %}

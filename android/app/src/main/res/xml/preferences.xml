@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="Server">
+
+        <EditTextPreference
+            app:key="server_url"
+            app:title="Server URL"
+            app:summary="Base URL for the Vi server (required)"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="webhook_secret"
+            app:title="Webhook Secret"
+            app:summary="Value of WEBHOOK_SECRET in .env"
+            app:defaultValue="666"
+            android:inputType="textPassword"
+            app:useSimpleSummaryProvider="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Filtering">
+
+        <Preference
+            app:key="whitelist_screen"
+            app:title="@string/whitelist_title"
+            app:summary="Only forward SMS from these numbers (empty = all)" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Behavior">
+
+        <ListPreference
+            app:key="mode"
+            app:title="Mode"
+            app:summary="%s"
+            app:defaultValue="observe"
+            app:entries="@array/mode_entries"
+            app:entryValues="@array/mode_values" />
+
+        <SwitchPreferenceCompat
+            app:key="enabled"
+            app:title="Enable Forwarding"
+            app:summary="Forward incoming SMS to Vi"
+            app:defaultValue="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

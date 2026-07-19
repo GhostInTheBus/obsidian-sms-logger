@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Setup — Vi{% endblock %}
+{% block content %}
+<h1>Setup & Status</h1>
+<p class="subtitle">Every integration Vi uses, and whether it's working</p>
+
+<div style="display:grid;gap:10px;margin-bottom:32px">
+  {% for c in checks %}
+  <div class="card" style="padding:16px;display:flex;align-items:flex-start;gap:14px">
+    <div style="font-size:20px;line-height:1;margin-top:2px;flex-shrink:0">
+      {% if c.ok == True %}✅
+      {% elif c.ok == False %}❌
+      {% else %}⏳
+      {% endif %}
+    </div>
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:15px;margin-bottom:3px">{{ c.name }}</div>
+      <div style="color:var(--muted);font-size:13px">{{ c.detail }}</div>
+    </div>
+    {% if c.fix_url and c.ok != True %}
+    <a href="{{ c.fix_url }}" target="_blank" class="btn btn-ghost" style="font-size:13px;flex-shrink:0">{{ c.fix_text or 'Fix →' }}</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<h2>Database</h2>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px">
+  {% set stats = [
+    ("Contacts", db_stats.contacts),
+    ("Memories", db_stats.memories),
+    ("Observed msgs", db_stats.observed),
+    ("Active nudges", db_stats.nudges),
+  ] %}
+  {% for label, val in stats %}
+  <div class="card" style="text-align:center;padding:20px 12px">
+    <div style="font-size:28px;font-weight:700;color:var(--accent2)">{{ val }}</div>
+    <div style="color:var(--muted);font-size:13px;margin-top:4px">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<h2>Telegram</h2>
+<div class="card" style="margin-bottom:32px">
+  <form action="/dashboard/setup/telegram" method="POST">
+    <div class="form-group">
+      <label>Bot Token</label>
+      <input type="text" name="telegram_token" placeholder="123456:ABC-DEF..." value="{{ telegram_token or '' }}">
+      <div style="font-size:12px;color:var(--muted);margin-top:5px">Create a bot via <strong>@BotFather</strong> on Telegram → /newbot</div>
+    </div>
+    <div class="form-group">
+      <label>Your Telegram User ID(s) <span style="font-weight:400">(comma-separated if multiple)</span></label>
+      <input type="text" name="telegram_owner_ids" placeholder="e.g. 123456789" value="{{ telegram_owner_ids or '' }}">
+      <div style="font-size:12px;color:var(--muted);margin-top:5px">Send <code style="background:var(--bg);padding:1px 5px;border-radius:4px">/start</code> to <strong>@userinfobot</strong> to get your ID</div>
+    </div>
+    <div class="form-group">
+      <label>Trusted User ID(s) <span style="font-weight:400">(optional — for partner access)</span></label>
+      <input type="text" name="telegram_trusted_ids" placeholder="e.g. 987654321" value="{{ telegram_trusted_ids or '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:6px">Save & Activate Telegram</button>
+    {% if telegram_status %}
+    <span style="margin-left:14px;font-size:13px;color:{% if telegram_ok %}var(--high){% else %}var(--danger){% endif %}">
+      {{ telegram_status }}
+    </span>
+    {% endif %}
+  </form>
+</div>
+
+<h2>Quick reference</h2>
+<div class="card">
+  <div style="font-size:13px;color:var(--muted);line-height:2">
+    <div><strong style="color:var(--text)">.env location</strong> — same directory as server.py on the NAS</div>
+    <div><strong style="color:var(--text)">Google Calendar</strong> — service account JSON + share your calendar with the service account email (client_email field in JSON)</div>
+    <div><strong style="color:var(--text)">Gmail app password</strong> — Google Account → Security → 2-Step Verification → App passwords. Select "Mail" + device name.</div>
+    <div><strong style="color:var(--text)">Embedding model</strong> — downloads automatically on first start. Needs: <code style="background:var(--bg);padding:1px 5px;border-radius:4px">pip install sentence-transformers</code></div>
+    <div><strong style="color:var(--text)">Telegram owner IDs</strong> — send <code style="background:var(--bg);padding:1px 5px;border-radius:4px">/start</code> to @userinfobot to get your Telegram user ID</div>
+  </div>
+</div>
+{% endblock %}
