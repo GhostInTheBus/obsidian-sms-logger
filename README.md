@@ -7,6 +7,10 @@ dashboard, exports everything to an Obsidian vault as linked Markdown, and
 exposes a read-only JSON API for downstream tools — including, optionally, an
 AI assistant that can answer texts for you.
 
+https://github.com/user-attachments/assets/04f0059a-3384-4993-bbe4-40afe2f13185
+
+[Watch on YouTube](https://youtu.be/g7PfEGDoJKQ) (1:28)
+
 **No LLM lives here.** Logging never depends on an assistant; the AI hookup is
 one optional environment variable.
 
